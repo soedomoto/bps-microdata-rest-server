@@ -11,7 +11,7 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.data.solr.repository.config.EnableSolrRepositories;
 
 @Configuration
-@PropertySource(value = { "classpath:application.properties" })
+@PropertySource({ "classpath:application.properties" })
 @EnableSolrRepositories(basePackages = {"id.go.bps.microdata"}, multicoreSupport = true)
 public class SolrConfig {
 	
@@ -19,8 +19,7 @@ public class SolrConfig {
     private String solrHost;
 
     @Bean
-    public SolrServer solrServer() throws MalformedURLException,
-            IllegalStateException {
+    public SolrServer solrServer() throws MalformedURLException, IllegalStateException {
         return new HttpSolrServer(solrHost);
     }
 	

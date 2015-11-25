@@ -15,7 +15,7 @@ import org.springframework.context.annotation.PropertySource;
 import io.jsonwebtoken.impl.crypto.MacProvider;
 
 @Configuration
-@PropertySource(value = { "classpath:application.properties" })
+@PropertySource({ "classpath:application.properties" })
 public class TokenConfig {
 	
 	@Value("${jwt.payload}")
