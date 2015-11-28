@@ -2,10 +2,9 @@ package id.go.bps.microdata.config;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.core.env.Environment;
 import org.springframework.data.cassandra.config.SchemaAction;
 import org.springframework.data.cassandra.config.java.AbstractCassandraConfiguration;
 import org.springframework.data.cassandra.repository.config.EnableCassandraRepositories;
@@ -16,23 +15,27 @@ import org.springframework.data.cassandra.repository.config.EnableCassandraRepos
 public class CassandraConfig extends AbstractCassandraConfiguration {
 	@SuppressWarnings("unused")
 	private static final Logger LOG = LoggerFactory.getLogger(CassandraConfig.class);
-
-	@Autowired
-	private Environment env;
+	
+	@Value("${cassandra.contactpoints}")
+	private String contactpoints;
+	@Value("${cassandra.port}")
+	private String port;
+	@Value("${cassandra.keyspace}")
+	private String keyspace;
 	
 	@Override
 	protected String getContactPoints() {
-		return env.getProperty("cassandra.contactpoints");
+		return contactpoints;
 	}
 	
 	@Override
 	protected int getPort() {
-		return Integer.parseInt(env.getProperty("cassandra.port"));
+		return Integer.parseInt(port);
 	}
 	
 	@Override
 	protected String getKeyspaceName() {
-		return env.getProperty("cassandra.keyspace");
+		return keyspace;
 	}
 	
 	@Override
