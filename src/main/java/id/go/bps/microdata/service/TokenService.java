@@ -26,10 +26,7 @@ import io.jsonwebtoken.SignatureException;
 
 @Path("token")
 public class TokenService {
-	
-	@Autowired
-	@Qualifier("payload")
-	private String payload;
+
 	@Autowired
 	@Qualifier("rsaKey")
 	private Key rsaKey;	

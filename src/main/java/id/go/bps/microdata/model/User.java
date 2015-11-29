@@ -31,6 +31,8 @@ public class User {
 	boolean isUser;
 	@Column("created_time")
 	Date createdTime;
+	@Column
+	String lucene;
 	
 	public User() {
 		

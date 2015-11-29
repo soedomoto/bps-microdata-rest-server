@@ -35,13 +35,20 @@ import org.jsoup.helper.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cassandra.core.cql.CqlIdentifier;
 import org.springframework.dao.DataAccessException;
-import org.springframework.data.cassandra.core.CassandraAdminOperations;
+import org.springframework.data.cassandra.core.CassandraOperations;
+import org.springframework.data.cassandra.mapping.CassandraType;
+
+import com.datastax.driver.core.DataType.Name;
+import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.datastax.driver.core.querybuilder.Select;
+import com.datastax.driver.core.utils.UUIDs;
 
 import id.go.bps.microdata.filter.API;
 import id.go.bps.microdata.library.DDIParser;
 import id.go.bps.microdata.model.Resource;
+import id.go.bps.microdata.model.ResourceFile;
+import id.go.bps.microdata.model.ResourceKey;
 
 @API
 @Path("api/catalog")
@@ -49,7 +56,7 @@ public class CatalogService {
 	Logger LOG = LoggerFactory.getLogger(CatalogService.class);
 	
 	@Autowired
-	private CassandraAdminOperations cassandraOps;
+	private CassandraOperations cqlOps;
 	
 	private StreamingOutput xsltProcessor(final String xslt, final String input, final Map<String, Object> param) {
 		StreamingOutput stream = new StreamingOutput() {
@@ -78,57 +85,6 @@ public class CatalogService {
 		};
 		
 		return stream;
-	}
-	
-	@POST
-	@Path("resource/create")
-	@Consumes(MediaType.MULTIPART_FORM_DATA)
-	@Produces(MediaType.APPLICATION_XML)
-	public Response importDdiFromFile(@FormDataParam("ddifile") final InputStream uplIS,
-            @FormDataParam("ddifile") FormDataContentDisposition detail) {
-		LOG.info(detail.getFileName());
-		
-		try {
-			IOUtils.copyLarge(uplIS, new FileOutputStream("ddi/" + detail.getFileName()));
-			
-			DDIParser parser = new DDIParser(new File("ddi/" + detail.getFileName()));
-			String tableName = parser.getIDNo();
-			
-			List<String> columns = new ArrayList<>();
-			columns.add("id UUID PRIMARY KEY");
-			for(Map<String, Object> var : parser.getVariables()) {
-				String varName = String.valueOf(var.get("name")).toLowerCase();
-				if(! columns.contains(varName + " text")) columns.add(varName + " text");
-			}
-			
-			String cql = String.format("CREATE TABLE IF NOT EXISTS \"%s\" ( %s )", tableName.replace("-", "_"), StringUtil.join(columns, " , "));
-			LOG.info(cql);
-			cassandraOps.execute(cql);
-			
-			cassandraOps.createTable(true, new CqlIdentifier(tableName.replace("-", "_"), true), Resource.class, null);
-			Resource res = cassandraOps.queryForObject("SELECT * FROM resource WHERE table_name like '%"+ tableName.replace("-", "_") +"%'", Resource.class);
-			if(res == null) {
-				res = new Resource();
-				res.setId(UUID.randomUUID());
-				res.setDdiId(parser.getIDNo());
-				res.setTitle(parser.getTitle());
-				res.setTableName(tableName.replace("-", "_"));
-				cassandraOps.insert(res);
-			} else {
-				res.setDdiId(parser.getIDNo());
-				res.setTitle(parser.getTitle());
-				res.setTableName(tableName.replace("-", "_"));
-			}
-			
-			return Response.ok().build();
-		} catch (IOException e) {
-			LOG.error(e.getMessage());
-			return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Error in uploading file(s)").build();
-		} catch (DataAccessException e) {
-			LOG.error(e.getMessage());
-			return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Error in database access").build();
-		}
-		
 	}
 	
 	@GET
