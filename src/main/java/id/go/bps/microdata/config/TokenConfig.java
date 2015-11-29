@@ -7,7 +7,6 @@ import java.security.Key;
 
 import javax.crypto.spec.SecretKeySpec;
 
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
@@ -17,14 +16,6 @@ import io.jsonwebtoken.impl.crypto.MacProvider;
 @Configuration
 @PropertySource({ "classpath:application.properties" })
 public class TokenConfig {
-	
-	@Value("${jwt.payload}")
-	private String payload;
-	
-	@Bean(name = "payload")
-	public String payload() {
-		return payload;
-	}
 	
 	@Bean(name = "generatedRsaKey")
 	public Key generatedRsaKey() {

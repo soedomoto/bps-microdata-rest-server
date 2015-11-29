@@ -46,7 +46,7 @@ public class APIFilter implements ContainerRequestFilter {
 
 	@Override
 	public void filter(ContainerRequestContext context) throws IOException {
-		String token = null;
+		/*String token = null;
 		// If via header
 		if(context.getHeaderString("x-access-token") != null) {
 			token = context.getHeaderString("x-access-token");
@@ -123,7 +123,7 @@ public class APIFilter implements ContainerRequestFilter {
 			
 			if(authUser == null) 
 				context.abortWith(Response.status(401).entity("User assigned to token is not found").build());
-		}
+		}*/
 	}
 
 }
