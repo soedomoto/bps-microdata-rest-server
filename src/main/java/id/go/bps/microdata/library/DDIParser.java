@@ -37,7 +37,7 @@ public class DDIParser {
 	 * Under tag : stdyDscr > citation > titlStmt > IDNo
 	 */
 	public String getIDNo() {
-		return doc.select("stdyDscr citation titlStmt IDNo").text();
+		return doc.select("stdyDscr citation titlStmt IDNo").text().trim();
 	}
 	
 	/**

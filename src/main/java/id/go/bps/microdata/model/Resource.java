@@ -1,6 +1,6 @@
 package id.go.bps.microdata.model;
 
-import java.util.UUID;
+import java.util.List;
 
 import org.springframework.data.cassandra.mapping.Column;
 import org.springframework.data.cassandra.mapping.PrimaryKey;
@@ -10,49 +10,44 @@ import org.springframework.data.cassandra.mapping.Table;
 public class Resource {
 	
 	@PrimaryKey
-	UUID id;
-	@Column("ddi_id")
-	String ddiId;
+	ResourceKey pk;
 	@Column
 	String title;
-	@Column("table_name")
-	String tableName;
+	@Column
+	List<String> files;
+	@Column
+	String lucene;
 	
-	public Resource() {
-		
-	}
+	public Resource() {}
 	
-	public Resource(UUID id, String ddiId, String title, String tableName) {
+	public Resource(ResourceKey pk, String title) {
 		super();
-		this.id = id;
-		this.ddiId = ddiId;
+		this.pk = pk;
 		this.title = title;
-		this.tableName = tableName;
+	}
+
+	public ResourceKey getPk() {
+		return pk;
+	}
+
+	public void setPk(ResourceKey pk) {
+		this.pk = pk;
 	}
 	
-	public UUID getId() {
-		return id;
-	}
-	public void setId(UUID id) {
-		this.id = id;
-	}
-	public String getDdiId() {
-		return ddiId;
-	}
-	public void setDdiId(String ddiId) {
-		this.ddiId = ddiId;
-	}
 	public String getTitle() {
 		return title;
 	}
+	
 	public void setTitle(String title) {
 		this.title = title;
 	}
-	public String getTableName() {
-		return tableName;
+
+	public List<String> getFiles() {
+		return files;
 	}
-	public void setTableName(String tableName) {
-		this.tableName = tableName;
+
+	public void setFile(List<String> files) {
+		this.files = files;
 	}
 
 }
