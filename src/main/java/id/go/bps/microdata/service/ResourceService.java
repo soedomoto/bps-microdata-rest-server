@@ -60,9 +60,8 @@ public class ResourceService {
 	private CassandraOperations cqlOps;
 	
 	@GET
-	@Path("list")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response listResources() {
+	public Response resources() {
 		List<Object> resources = new ArrayList<>();
 		
 		Select s = QueryBuilder.select().from("resource").allowFiltering();
@@ -89,7 +88,7 @@ public class ResourceService {
 	@GET
 	@Path("{resFileId}/variables")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response resourceVar(@PathParam("resFileId") String resFileId) {
+	public Response resourceVariables(@PathParam("resFileId") String resFileId) {
 		Map<String, String> map = cassandraTypeMap();
 		
 		Select sf = QueryBuilder.select().from("resource_file").allowFiltering();

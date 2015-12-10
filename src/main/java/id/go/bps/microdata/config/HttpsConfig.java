@@ -15,7 +15,7 @@ import org.springframework.context.annotation.PropertySource;
 @PropertySource({ "classpath:application.properties" })
 public class HttpsConfig {
 	
-	@Value("${server.http.port}")
+	/*@Value("${server.http.port}")
 	private Integer httpPort;
 	@Value("${server.port}")
 	private Integer httpsPort;
@@ -46,6 +46,6 @@ public class HttpsConfig {
 	    connector.setRedirectPort(httpsPort);
 	    
 	    return connector;
-	  }
+	  }*/
 
 }
