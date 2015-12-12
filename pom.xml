@@ -134,6 +134,21 @@
 						</resources>              
 					</configuration> 
 				</execution>
+				<execution>
+					<id>copy-thumb</id>
+					<phase>validate</phase>
+					<goals>
+						<goal>copy-resources</goal>
+					</goals>
+					<configuration>
+						<outputDirectory>${out-dir}/thumb</outputDirectory>
+						<resources>
+							<resource>
+								<directory>${basedir}/thumb</directory>
+							</resource>
+						</resources>              
+					</configuration> 
+				</execution>
 			</executions>
 		</plugin>
   	</plugins>

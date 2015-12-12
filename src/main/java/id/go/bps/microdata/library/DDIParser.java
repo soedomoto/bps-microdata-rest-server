@@ -428,6 +428,7 @@ public class DDIParser {
 			description.put("decimal", el.attr("dcml"));
 			description.put("interval", el.attr("intrvl"));
 			description.put("label", el.select("labl").text());
+			description.put("question", el.select("qstn qstnLit").text());
 			description.put("repondentUnit", el.select("respUnit").text());
 			
 			Map<String, Object> valRange = new HashMap<>();

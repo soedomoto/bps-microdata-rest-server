@@ -25,6 +25,8 @@ public class CassandraConfig extends AbstractCassandraConfiguration {
 	private String port;
 	@Value("${cassandra.keyspace}")
 	private String keyspace;
+	@Value("${cassandra.recreate}")
+	private Boolean recreate;
 	
 	@Override
 	protected String getContactPoints() {
@@ -54,8 +56,8 @@ public class CassandraConfig extends AbstractCassandraConfiguration {
 	
 	@Override
     public SchemaAction getSchemaAction() {
-        //return SchemaAction.RECREATE_DROP_UNUSED;
-		return SchemaAction.NONE;
+        if(recreate) return SchemaAction.RECREATE_DROP_UNUSED;
+        else return SchemaAction.NONE;
     }
 	
 	@Override

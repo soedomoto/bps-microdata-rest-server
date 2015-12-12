@@ -15,6 +15,7 @@ public class ResourceFilterBindingFeature implements DynamicFeature {
 	@Override
 	public void configure(ResourceInfo resourceInfo, FeatureContext context) {
 		context.register(CORSResponseFilter.class);
+		context.register(CassandraIndexFilter.class);
 		
 		if (resourceInfo.getResourceMethod().isAnnotationPresent(API.class) || 
 				resourceInfo.getResourceClass().isAnnotationPresent(API.class)) {
