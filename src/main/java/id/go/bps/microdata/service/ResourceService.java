@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -19,6 +20,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -28,6 +30,7 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataParam;
+import org.jsoup.helper.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,6 +46,11 @@ import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select;
 import com.datastax.driver.core.utils.UUIDs;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stratio.cassandra.lucene.builder.search.Search;
+import com.stratio.cassandra.lucene.builder.search.condition.BooleanCondition;
+import com.stratio.cassandra.lucene.builder.search.condition.Condition;
+import com.stratio.cassandra.lucene.builder.search.condition.MatchCondition;
 
 import id.go.bps.microdata.filter.API;
 import id.go.bps.microdata.library.CassandraUtil;
@@ -146,15 +154,57 @@ public class ResourceService {
 	@GET
 	@Path("{resFileId}/query")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response resourceQuery(@PathParam("resFileId") String resFileId) {		
+	public Response resourceQuery(@PathParam("resFileId") String resFileId, 
+		@QueryParam("variables") String variables, 
+		@QueryParam("filter") String filter
+	) {
+		String sel = "*";
+		if(variables != null) {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				@SuppressWarnings("unchecked")
+				List<String> lstVars = mapper.readValue(variables, ArrayList.class);
+				if(lstVars.size() > 0) sel = StringUtil.join(lstVars, ",");
+			} catch (IOException e) {
+				LOG.error(e.getMessage());
+			}
+		}
+		
+		Search s = new Search();
+		
+		String fil = s.filter(s.all()).build();
+		if(filter != null) {
+			ObjectMapper mapper = new ObjectMapper();
+			try {
+				@SuppressWarnings("unchecked")
+				Map<String, Map<String, String>> lstFilters = mapper.readValue(filter, HashMap.class);
+				
+				if(lstFilters.keySet().size() > 0) {
+					List<Condition> conds = new ArrayList<>();
+					for(Object op : lstFilters.keySet().toArray()) {
+						Map<String, String> keyVal = lstFilters.get(op);
+						
+						if(String.valueOf(op).equalsIgnoreCase("=")) {
+							for(Object key : keyVal.keySet().toArray()) {
+								conds.add(s.match(String.valueOf(key), keyVal.get(key)));
+							}
+						}
+					}
+					
+					fil = s.filter(s.bool().must(conds.toArray(new Condition[conds.size()]))).build();
+				}
+			} catch (IOException e) {
+				LOG.error(e.getMessage());
+			}
+		}
+		
 		String cql = String.format(
 			"SELECT * FROM resource WHERE lucene = '{ filter : { " + 
 				"type  : \"match\", " + 
 				"field : \"%s\", " + 
 				"value : \"%s\" " + 
 			"} }'", 
-			"id", 
-			resFileId
+			"id", resFileId
 		);	
 		
 		Resource res = cqlOps.selectOne(cql, Resource.class);		
@@ -163,12 +213,10 @@ public class ResourceService {
 				.build();
 		
 		String cqlRes = String.format(
-			"SELECT * FROM %s WHERE lucene = '{ filter : { " + 
-				"type  : \"all\"" + 
-			"} }'", 
-			res.getTableName()
+			"SELECT %s FROM %s WHERE lucene = '%s'", 
+			sel, res.getTableName(), fil
 		);
-		
+		//LOG.info(cqlRes);
 		final ResultSet rs = cqlOps.query(cqlRes);
 		
 		Map<String, Class<?>> type = new HashMap<>();

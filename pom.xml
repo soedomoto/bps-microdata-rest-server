@@ -255,14 +255,14 @@
   	</dependency>
   	<dependency>
   		<groupId>com.stratio.cassandra</groupId>
-  		<artifactId>cassandra-lucene-index-plugin</artifactId>
-  		<version>2.1.9.0</version>
-  		<exclusions>
+  		<artifactId>cassandra-lucene-index-builder</artifactId>
+  		<version>2.1.11.1</version>
+  		<!-- <exclusions>
   			<exclusion>
   				<artifactId>cassandra-all</artifactId>
   				<groupId>org.apache.cassandra</groupId>
   			</exclusion>
-  		</exclusions>
+  		</exclusions> -->
   	</dependency>
   </dependencies>
 </project>

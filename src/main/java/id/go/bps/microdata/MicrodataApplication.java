@@ -6,11 +6,19 @@ import java.net.MalformedURLException;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.boot.context.web.SpringBootServletInitializer;
 
 import id.go.bps.microdata.library.ClasspathUtil;
 
 @SpringBootApplication
-public class MicrodataApplication {
+public class MicrodataApplication extends SpringBootServletInitializer {
+	
+	@Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+        return application.sources(MicrodataApplication.class);
+    }
+	
     public static void main(String[] args) {
     	File cd = new File(System.getProperty("user.dir") + File.separator + "conf");
     	
@@ -24,4 +32,5 @@ public class MicrodataApplication {
     	
     	SpringApplication.run(MicrodataApplication.class, args);
     }
+    
 }
