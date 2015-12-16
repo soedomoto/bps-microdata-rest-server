@@ -1,18 +1,18 @@
 package id.go.bps.microdata.service;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -21,10 +21,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.commons.io.IOUtils;
@@ -34,26 +32,22 @@ import org.jsoup.helper.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.cassandra.core.CassandraOperations;
 
 import com.datastax.driver.core.ColumnDefinitions.Definition;
-import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
-import com.datastax.driver.core.exceptions.InvalidQueryException;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select;
 import com.datastax.driver.core.utils.UUIDs;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.stratio.cassandra.lucene.builder.search.Search;
-import com.stratio.cassandra.lucene.builder.search.condition.BooleanCondition;
 import com.stratio.cassandra.lucene.builder.search.condition.Condition;
-import com.stratio.cassandra.lucene.builder.search.condition.MatchCondition;
 
 import id.go.bps.microdata.filter.API;
-import id.go.bps.microdata.library.CassandraUtil;
 import id.go.bps.microdata.model.Catalog;
 import id.go.bps.microdata.model.Resource;
 import ru.smartflex.tools.dbf.DbfEngine;
@@ -68,6 +62,9 @@ public class ResourceService {
 	
 	@Autowired
 	private CassandraOperations cqlOps;
+	@Autowired 
+	@Qualifier("resourceBasedir")
+	private String resourceBasedir;
 	
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
@@ -77,7 +74,7 @@ public class ResourceService {
 		Select s = QueryBuilder.select().from("resource").allowFiltering();
 		for(Catalog res : cqlOps.select(s, Catalog.class)) {
 			for(String resFileId : res.getFiles()) {
-				Select sf = QueryBuilder.select().from("resource_file").allowFiltering();
+				Select sf = QueryBuilder.select().from("resource").allowFiltering();
 				sf.where(QueryBuilder.eq("id", UUID.fromString(resFileId)));
 				Resource rFile = cqlOps.selectOne(sf, Resource.class);
 				
@@ -248,45 +245,73 @@ public class ResourceService {
 	}
 	
 	@POST
-	@Path("{resFileId}/import/dbf")
+	@Path("{resFileId}/import/dbf/zip")
 	@Consumes(MediaType.MULTIPART_FORM_DATA)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response importResourceFromFile(@FormDataParam("dbffile") final InputStream uplIS,
-            @FormDataParam("dbffile") FormDataContentDisposition detail, @PathParam("resFileId") String resFileId) {
+	public Response importResourceFromZipFile(@FormDataParam("dbffile") final InputStream uplIS,
+            @FormDataParam("dbffile") FormDataContentDisposition detail, @PathParam("resFileId") String resFileId) {		
+		LOG.info("Received Zipped DBF File : " + detail.getFileName());
+		String dirOut = resourceBasedir + File.separator + "dbf";
+		
+		ZipInputStream zis = new ZipInputStream(uplIS);
 		try {
-			String luceneIndexCql = CassandraUtil.luceneIndexCql("resource", Resource.class, 1);
-			cqlOps.execute(luceneIndexCql);
-		} catch (InvalidQueryException e) {
-			LOG.info(e.getMessage());
+			new File(dirOut).mkdirs();
+			
+			byte[] buffer = new byte[1024];
+			ZipEntry ze = zis.getNextEntry();
+			while(ze != null) {
+				String fileName = dirOut + File.separator + new Date().getTime() + ze.getName();
+				FileOutputStream fos = new FileOutputStream(fileName);
+				
+				int len;
+	            while ((len = zis.read(buffer)) > 0) {
+	            	fos.write(buffer, 0, len);
+	            }
+	            
+	            fos.close();
+	            
+	            return processDbf(new FileInputStream(fileName), resFileId);
+			}
+			
+			zis.closeEntry();
+	    	zis.close();
+		} catch (IOException e) {
+			LOG.error(e.getMessage());
+			Map<String, Object> resp = new HashMap<>();
+			resp.put("success", false);
+			resp.put("error", "Error in uploading file");
+			return Response.ok(resp).build();
 		}
 		
-		LOG.info("Received DBF File : " + detail.getFileName());
-		String filename = new Date().getTime() + detail.getFileName();
-		
-		String cql = String.format(
-			"SELECT * FROM resource WHERE lucene = '{ filter : { " + 
-				"type  : \"match\", " + 
-				"field : \"%s\", " + 
-				"value : \"%s\" " + 
-			"} }'", 
-			"id", 
-			UUID.fromString(resFileId)
-		);	
-		Resource res = cqlOps.selectOne(cql, Resource.class);
-		
-		if(res == null) return Response.status(Status.NOT_FOUND)
-				.entity(String.format("Resource %s not found", resFileId))
-				.build();
-		
-		Map<String, String> map = cassandraTypeMap();
-		List<Row> cols = cqlOps.query(String.format("SELECT * FROM system.schema_columns WHERE columnfamily_name='%s' AND keyspace_name='%s'", res.getTableName(), cqlOps.getSession().getLoggedKeyspace())).all();
+		return Response.ok().build();
+	}
+	
+	private Response processDbf(InputStream uplIs, String resFileId) {
+		Map<String, Object> resp = new HashMap<>();
+		boolean success = true;
 		
 		try {
-			new File("dbf/" + filename).getParentFile().mkdirs();
-			IOUtils.copyLarge(uplIS, new FileOutputStream("dbf/" + filename));
+			String cql = String.format(
+				"SELECT * FROM resource WHERE lucene = '{ filter : { " + 
+					"type  : \"match\", " + 
+					"field : \"%s\", " + 
+					"value : \"%s\" " + 
+				"} }'", 
+				"id", 
+				UUID.fromString(resFileId)
+			);	
+			Resource res = cqlOps.selectOne(cql, Resource.class);
+			
+			if(res == null) {
+				success = false;
+				resp.put("error", String.format("Resource %s not found", resFileId));
+			}
+			
+			Map<String, String> map = cassandraTypeMap();
+			List<Row> cols = cqlOps.query(String.format("SELECT * FROM system.schema_columns WHERE columnfamily_name='%s' AND keyspace_name='%s'", res.getTableName(), cqlOps.getSession().getLoggedKeyspace())).all();
 			
 			List<Insert> lstIns = new ArrayList<>();
-			DbfIterator iter = DbfEngine.getReader("dbf/" + filename, null);
+			DbfIterator iter = DbfEngine.getReader(uplIs, null);
 			while (iter.hasMoreRecords()) {
 				DbfRecord rec = iter.nextRecord();
 				
@@ -307,15 +332,38 @@ public class ResourceService {
 			}
 			
 			for(Insert ins : lstIns) cqlOps.execute(ins);
-		} catch (IOException e) {
+			resp.put("result", "Succesfully processing dbf file(s)");
+		} catch(DataAccessException e) {
 			LOG.error(e.getMessage());
-			return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Error in uploading file(s)").build();
-		} catch (DataAccessException e) {
-			LOG.error(e.getMessage());
-			return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Error in database access").build();
+			success = false;
+			resp.put("error", "Error in database access");
 		}
 		
-		return Response.ok().build();
+		resp.put("success", success);
+		return Response.ok(resp).build();
+	}
+	
+	@POST
+	@Path("{resFileId}/import/dbf")
+	@Consumes(MediaType.MULTIPART_FORM_DATA)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response importResourceFromFile(@FormDataParam("dbffile") final InputStream uplIS,
+            @FormDataParam("dbffile") FormDataContentDisposition detail, @PathParam("resFileId") String resFileId) {		
+		LOG.info("Received DBF File : " + detail.getFileName());
+		String fileOut = resourceBasedir + File.separator + "dbf" + File.separator + new Date().getTime() + detail.getFileName();
+		
+		try {
+			new File(fileOut).getParentFile().mkdirs();
+			IOUtils.copyLarge(uplIS, new FileOutputStream(fileOut));
+			
+			return processDbf(new FileInputStream(fileOut), resFileId);
+		} catch (IOException e) {
+			LOG.error(e.getMessage());
+			Map<String, Object> resp = new HashMap<>();
+			resp.put("success", false);
+			resp.put("error", "Error in uploading file");
+			return Response.ok(resp).build();
+		}
 	}
 	
 	private Map<String, String> cassandraTypeMap() {

@@ -26,7 +26,7 @@ public class AccountService {
 	@Autowired
 	private CassandraOperations cassandraOps;
 	
-	@GET
+	/*@GET
 	@Path("login/{username}/{password}")
 	@Produces({MediaType.APPLICATION_JSON})
 	public String login(@PathParam("username") String username, @PathParam("password") String password, 
@@ -43,7 +43,7 @@ public class AccountService {
 		} else {
 			return "Invalid username or password";
 		}
-	}
+	}*/
 	
 	@GET
 	@Path("info")

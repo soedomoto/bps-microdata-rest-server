@@ -15,6 +15,7 @@ import com.datastax.driver.core.exceptions.InvalidQueryException;
 import id.go.bps.microdata.library.CassandraUtil;
 import id.go.bps.microdata.model.Catalog;
 import id.go.bps.microdata.model.Resource;
+import id.go.bps.microdata.model.User;
 
 public class CassandraIndexFilter implements ContainerRequestFilter {
 	private Logger LOG = LoggerFactory.getLogger(CassandraIndexFilter.class);
@@ -29,7 +30,7 @@ public class CassandraIndexFilter implements ContainerRequestFilter {
 			//LOG.info(luceneIndexCql);
 			cqlOps.execute(luceneIndexCql);
 		} catch (InvalidQueryException e) {
-			if(!e.getMessage().equalsIgnoreCase("Index already exists")) 
+			//if(!e.getMessage().equalsIgnoreCase("Index already exists")) 
 				LOG.info(e.getMessage());
 		}
 		
@@ -38,7 +39,16 @@ public class CassandraIndexFilter implements ContainerRequestFilter {
 			//LOG.info(luceneIndexCql);
 			cqlOps.execute(luceneIndexCql);
 		} catch (InvalidQueryException e) {
-			if(!e.getMessage().equalsIgnoreCase("Index already exists"))
+			//if(!e.getMessage().equalsIgnoreCase("Index already exists"))
+				LOG.info(e.getMessage());
+		}
+		
+		try {
+			String luceneIndexCql = CassandraUtil.luceneIndexCql("user", User.class, 1);
+			//LOG.info(luceneIndexCql);
+			cqlOps.execute(luceneIndexCql);
+		} catch (InvalidQueryException e) {
+			//if(!e.getMessage().equalsIgnoreCase("Index already exists"))
 				LOG.info(e.getMessage());
 		}
 	}

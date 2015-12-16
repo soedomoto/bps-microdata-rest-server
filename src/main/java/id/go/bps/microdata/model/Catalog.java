@@ -17,6 +17,10 @@ public class Catalog {
 	String ddiId;
 	@Column
 	String title;
+	@Column("data_kind")
+	String dataKind;
+	@Column("abstract")
+	String abstrakt;
 	@Column
 	List<String> files;
 	@Column
@@ -62,6 +66,22 @@ public class Catalog {
 
 	public void setFiles(List<String> files) {
 		this.files = files;
+	}
+
+	public String getDataKind() {
+		return dataKind;
+	}
+
+	public void setDataKind(String dataKind) {
+		this.dataKind = dataKind;
+	}
+
+	public String getAbstract() {
+		return abstrakt;
+	}
+
+	public void setAbstract(String abstrakt) {
+		this.abstrakt = abstrakt;
 	}
 
 }

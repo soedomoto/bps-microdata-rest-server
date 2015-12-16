@@ -47,7 +47,7 @@ public class TokenService {
 			SimpleDateFormat dt = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
 			
 			String token = Jwts.builder()
-					.setAudience(((User) request.getSession().getAttribute("authuser")).getPk().getUserId().toString())
+					.setAudience(((User) request.getSession().getAttribute("authuser")).getUserId().toString())
 					.setExpiration(exp)
 					.signWith(SignatureAlgorithm.HS512, rsaKey)
 					.compact();

@@ -3,16 +3,22 @@ package id.go.bps.microdata.model;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
+import org.springframework.cassandra.core.Ordering;
+import org.springframework.cassandra.core.PrimaryKeyType;
 import org.springframework.data.cassandra.mapping.Column;
 import org.springframework.data.cassandra.mapping.PrimaryKey;
+import org.springframework.data.cassandra.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.mapping.Table;
 
 @Table("user")
 public class User {
 	
-	@PrimaryKey
-	UserKey pk;
+	@PrimaryKeyColumn(name = "user_id", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
+	private UUID userId;
+	@PrimaryKeyColumn(name = "username", ordinal = 1, type = PrimaryKeyType.CLUSTERED, ordering = Ordering.DESCENDING)
+	private String userName;
 	@Column("firstname")
 	String firstName;
 	@Column("lastname")
@@ -36,12 +42,13 @@ public class User {
 	
 	public User() {
 		
-	}	
+	}
 
-	public User(UserKey pk, String firstName, String lastName, String password, List<String> phones,
+	public User(UUID userId, String userName, String firstName, String lastName, String password, List<String> phones,
 			List<String> emails, boolean isAdmin, boolean isDeveloper, boolean isUser, Date createdTime) {
 		super();
-		this.pk = pk;
+		this.userId = userId;
+		this.userName = userName;
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.password = password;
@@ -53,12 +60,20 @@ public class User {
 		this.createdTime = createdTime;
 	}
 
-	public UserKey getPk() {
-		return pk;
+	public UUID getUserId() {
+		return userId;
 	}
 
-	public void setPk(UserKey pk) {
-		this.pk = pk;
+	public void setUserId(UUID userId) {
+		this.userId = userId;
+	}
+
+	public String getUserName() {
+		return userName;
+	}
+
+	public void setUserName(String userName) {
+		this.userName = userName;
 	}
 
 	public String getFirstName() {
@@ -75,10 +90,6 @@ public class User {
 
 	public void setLastName(String lastName) {
 		this.lastName = lastName;
-	}
-
-	public String getPassword() {
-		return password;
 	}
 
 	public void setPassword(String password) {

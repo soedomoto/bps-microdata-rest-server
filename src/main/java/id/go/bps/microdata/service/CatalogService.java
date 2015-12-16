@@ -37,6 +37,7 @@ import org.jsoup.helper.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cassandra.core.keyspace.CreateTableSpecification;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.cassandra.core.CassandraOperations;
@@ -60,6 +61,9 @@ public class CatalogService {
 	
 	@Autowired
 	private CassandraOperations cqlOps;
+	@Autowired 
+	@Qualifier("resourceBasedir")
+	private String resourceBasedir;
 	
 	@POST
 	@Path("import/ddi")
@@ -70,10 +74,11 @@ public class CatalogService {
 		LOG.info("Received DDI File : " + detail.getFileName());
 		
 		try {
-			new File("ddi/" + detail.getFileName()).getParentFile().mkdirs();
+			String fileOut = resourceBasedir + File.separator + "ddi" + File.separator + detail.getFileName();
+			new File(fileOut).getParentFile().mkdirs();
 			
-			IOUtils.copyLarge(uplIS, new FileOutputStream("ddi/" + detail.getFileName()));			
-			DDIParser parser = new DDIParser(new File("ddi/" + detail.getFileName()));
+			IOUtils.copyLarge(uplIS, new FileOutputStream(fileOut));			
+			DDIParser parser = new DDIParser(new File(fileOut));
 			
 			List<CreateTableSpecification> cqlTables = new ArrayList<>();
 			List<String> luceneIndices = new ArrayList<>();
@@ -93,6 +98,8 @@ public class CatalogService {
 				cat.setId(UUIDs.timeBased());
 				cat.setDdiId(parser.getIDNo());
 				cat.setTitle(parser.getTitle());
+				cat.setDataKind(parser.getDataKind());
+				cat.setAbstract(parser.getAbstract());
 				
 				List<String> idFiles = new ArrayList<>();
 				List<Resource> rFiles = new ArrayList<>();
@@ -127,7 +134,7 @@ public class CatalogService {
 				List<Resource> rFiles = new ArrayList<>();
 				List<Map<String, Object>> files = parser.getFileDescription();
 				for(String idFile : cat.getFiles()) {
-					Select sf = QueryBuilder.select().from("resource_file").allowFiltering();
+					Select sf = QueryBuilder.select().from("resource").allowFiltering();
 					sf.where(QueryBuilder.eq("id", UUID.fromString(idFile)));
 					Resource rFile = cqlOps.selectOne(sf, Resource.class);
 					
@@ -178,6 +185,9 @@ public class CatalogService {
 			mCats.put("id", res.getId().toString());
 			mCats.put("ddiId", res.getDdiId());
 			mCats.put("title", res.getTitle());
+			mCats.put("resources", res.getFiles());
+			mCats.put("abstract", res.getAbstract());
+			mCats.put("dataKind", res.getDataKind());
 			
 			catalogs.add(mCats);
 		}
@@ -207,9 +217,12 @@ public class CatalogService {
 			mCats.put("ddiId", res.getDdiId());
 			mCats.put("title", res.getTitle());
 			mCats.put("resources", res.getFiles());
+			mCats.put("abstract", res.getAbstract());
+			mCats.put("dataKind", res.getDataKind());
 			
 			try {
-				DDIParser ddi = new DDIParser(new File("ddi/" + res.getDdiId() + ".xml"));
+				String ddiFile = resourceBasedir + File.separator + "ddi" + File.separator + res.getDdiId() + ".xml";
+				DDIParser ddi = new DDIParser(new File(ddiFile));
 				mCats.put("ddi", ddi);
 			} catch (IOException e) {
 				LOG.error(e.getMessage());
