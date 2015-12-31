@@ -104,51 +104,6 @@
 						</resources>              
 					</configuration> 
 				</execution>
-				<execution>
-					<id>copy-ddi</id>
-					<phase>validate</phase>
-					<goals>
-						<goal>copy-resources</goal>
-					</goals>
-					<configuration>
-						<outputDirectory>${out-dir}/ddi</outputDirectory>
-						<resources>
-							<resource>
-								<directory>${basedir}/ddi</directory>
-							</resource>
-						</resources>              
-					</configuration> 
-				</execution>
-				<execution>
-					<id>copy-xslt</id>
-					<phase>validate</phase>
-					<goals>
-						<goal>copy-resources</goal>
-					</goals>
-					<configuration>
-						<outputDirectory>${out-dir}/xslt</outputDirectory>
-						<resources>
-							<resource>
-								<directory>${basedir}/xslt</directory>
-							</resource>
-						</resources>              
-					</configuration> 
-				</execution>
-				<execution>
-					<id>copy-thumb</id>
-					<phase>validate</phase>
-					<goals>
-						<goal>copy-resources</goal>
-					</goals>
-					<configuration>
-						<outputDirectory>${out-dir}/thumb</outputDirectory>
-						<resources>
-							<resource>
-								<directory>${basedir}/thumb</directory>
-							</resource>
-						</resources>              
-					</configuration> 
-				</execution>
 			</executions>
 		</plugin>
   	</plugins>
