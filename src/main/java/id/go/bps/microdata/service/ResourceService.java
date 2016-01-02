@@ -73,7 +73,7 @@ public class ResourceService {
 		
 		Select s = QueryBuilder.select().from("resource").allowFiltering();
 		for(Catalog res : cqlOps.select(s, Catalog.class)) {
-			for(String resFileId : res.getFiles()) {
+			for(String resFileId : res.getResources()) {
 				Select sf = QueryBuilder.select().from("resource").allowFiltering();
 				sf.where(QueryBuilder.eq("id", UUID.fromString(resFileId)));
 				Resource rFile = cqlOps.selectOne(sf, Resource.class);

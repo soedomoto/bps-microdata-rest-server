@@ -261,7 +261,7 @@ public class UserService {
 	
 	@GET
 	@Path("{id}/thumb")
-	@Produces("image/jpeg")
+	@Produces("image/png")
 	public Response thumb(@PathParam("id") String id) {
 		Search s = new Search();
 		String fil = s.filter(Builder.match("user_id", id)).build();

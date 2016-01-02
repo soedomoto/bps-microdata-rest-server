@@ -21,6 +21,8 @@ public class Catalog {
 	String dataKind;
 	@Column("abstract")
 	String abstrakt;
+	//@Column("ddi_file")
+	//ByteBuffer ddiFile;
 	@Column
 	List<String> files;
 	@Column
@@ -60,11 +62,11 @@ public class Catalog {
 		this.title = title;
 	}
 
-	public List<String> getFiles() {
+	public List<String> getResources() {
 		return files;
 	}
 
-	public void setFiles(List<String> files) {
+	public void setResources(List<String> files) {
 		this.files = files;
 	}
 
@@ -83,5 +85,13 @@ public class Catalog {
 	public void setAbstract(String abstrakt) {
 		this.abstrakt = abstrakt;
 	}
+	
+	/*public ByteBuffer getDdiFile() {
+		return ddiFile;
+	}
+
+	public void setDdiFile(ByteBuffer ddiFile) {
+		this.ddiFile = ddiFile;
+	}*/
 
 }

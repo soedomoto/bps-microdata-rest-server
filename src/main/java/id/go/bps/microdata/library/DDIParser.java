@@ -2,6 +2,7 @@ package id.go.bps.microdata.library;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,6 +18,10 @@ public class DDIParser {
 	
 	public DDIParser(File input) throws IOException {
 		doc = Jsoup.parse(input, "UTF-8");
+	}
+	
+	public DDIParser(InputStream input) throws IOException {
+		doc = Jsoup.parse(input, "UTF-8", "/");
 	}
 	
 	/**
