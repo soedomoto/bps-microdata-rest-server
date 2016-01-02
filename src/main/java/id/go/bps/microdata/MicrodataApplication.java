@@ -3,6 +3,7 @@ package id.go.bps.microdata;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -20,13 +21,14 @@ public class MicrodataApplication extends SpringBootServletInitializer {
     }
 	
     public static void main(String[] args) {
-    	File cd = new File(System.getProperty("user.dir") + File.separator + "conf");
-    	
     	ClasspathUtil cpU;
 		try {
+			File jarFile = new File(MicrodataApplication.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+	    	File cd = new File(jarFile.getParentFile().getAbsolutePath() + File.separator + "conf");
+			
 			cpU = new ClasspathUtil();
 			cpU.addDirectoryClasspath(cd, false);
-		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | MalformedURLException e1) {
+		} catch (NoSuchMethodException | SecurityException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | MalformedURLException | URISyntaxException e1) {
 			e1.printStackTrace();
 		}
     	
