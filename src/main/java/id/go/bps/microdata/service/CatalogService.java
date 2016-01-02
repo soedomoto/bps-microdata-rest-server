@@ -38,8 +38,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.data.cassandra.core.CassandraOperations;
 
 import com.datastax.driver.core.DataType;
-import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.querybuilder.Select;
 import com.datastax.driver.core.utils.UUIDs;
 import com.stratio.cassandra.lucene.builder.Builder;
 import com.stratio.cassandra.lucene.builder.search.Search;
@@ -125,9 +123,11 @@ public class CatalogService {
 				List<Resource> rFiles = new ArrayList<>();
 				List<Map<String, Object>> files = parser.getFileDescription();
 				for(String idFile : cat.getResources()) {
-					Select sf = QueryBuilder.select().from("resource").allowFiltering();
-					sf.where(QueryBuilder.eq("id", UUID.fromString(idFile)));
-					Resource rFile = cqlOps.selectOne(sf, Resource.class);
+					String fil = new Search().filter(Builder.match("id", UUID.fromString(idFile))).build();
+					Resource rFile = cqlOps.selectOne(
+						String.format("SELECT * FROM resource WHERE lucene='%s'", fil), 
+						Resource.class
+					);
 					
 					for(Map<String, Object> file : files) {
 						if(String.valueOf(file.get("id")).equalsIgnoreCase(rFile.getFileId())) {

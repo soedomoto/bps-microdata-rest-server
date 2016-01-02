@@ -41,9 +41,9 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.querybuilder.Select;
 import com.datastax.driver.core.utils.UUIDs;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.stratio.cassandra.lucene.builder.Builder;
 import com.stratio.cassandra.lucene.builder.search.Search;
 import com.stratio.cassandra.lucene.builder.search.condition.Condition;
 
@@ -71,12 +71,18 @@ public class ResourceService {
 	public Response resources() {
 		List<Object> resources = new ArrayList<>();
 		
-		Select s = QueryBuilder.select().from("resource").allowFiltering();
-		for(Catalog res : cqlOps.select(s, Catalog.class)) {
+		List<Catalog> reses = cqlOps.select(
+			String.format("SELECT * FROM catalog WHERE lucene='%s'", 
+				new Search().filter(Condition.all())), 
+			Catalog.class
+		);
+		for(Catalog res : reses) {
 			for(String resFileId : res.getResources()) {
-				Select sf = QueryBuilder.select().from("resource").allowFiltering();
-				sf.where(QueryBuilder.eq("id", UUID.fromString(resFileId)));
-				Resource rFile = cqlOps.selectOne(sf, Resource.class);
+				String filter = new Search().filter(Condition.match("id", UUID.fromString(resFileId))).build();
+				Resource rFile = cqlOps.selectOne(
+					String.format("SELECT * FROM resource WHERE lucene='%s'", filter), 
+					Resource.class
+				);
 				
 				Map<String, Object> mRes = new HashMap<>();
 				mRes.put("resourceId", rFile.getId());
@@ -96,18 +102,14 @@ public class ResourceService {
 	@Path("{resFileId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response resourceDetail(@PathParam("resFileId") String resFileId) {
-		String cql = String.format(
-			"SELECT * FROM resource WHERE lucene = '{ filter : { " + 
-				"type  : \"match\", " + 
-				"field : \"%s\", " + 
-				"value : \"%s\" " + 
-			"} }'", 
-			"id", 
-			resFileId
-		);		
-		
 		try {
-			return Response.ok(cqlOps.selectOne(cql, Resource.class)).build();
+			String filter = new Search().filter(Condition.match("id", resFileId)).build();
+			Resource res = cqlOps.selectOne(
+				String.format("SELECT * FROM resource WHERE lucene='%s'", filter), 
+				Resource.class
+			);
+			
+			return Response.ok(res).build();
 		} catch(Exception e) {
 			LOG.error(e.getMessage());
 			return Response.status(Status.INTERNAL_SERVER_ERROR).entity("Something wrong happened").build();
@@ -120,17 +122,11 @@ public class ResourceService {
 	public Response resourceVariables(@PathParam("resFileId") String resFileId) {
 		Map<String, String> map = cassandraTypeMap();
 		
-		String cql = String.format(
-			"SELECT * FROM resource WHERE lucene = '{ filter : { " + 
-				"type  : \"match\", " + 
-				"field : \"%s\", " + 
-				"value : \"%s\" " + 
-			"} }'", 
-			"id", 
-			resFileId
-		);	
-		
-		Resource res = cqlOps.selectOne(cql, Resource.class);
+		String filter = new Search().filter(Condition.match("id", resFileId)).build();
+		Resource res = cqlOps.selectOne(
+			String.format("SELECT * FROM resource WHERE lucene='%s'", filter), 
+			Resource.class
+		);
 		if(res != null) {
 			List<Object> vars = new ArrayList<>();
 			for(Row row : cqlOps.query(String.format("SELECT * FROM system.schema_columns WHERE columnfamily_name='%s' AND keyspace_name='%s'", res.getTableName(), cqlOps.getSession().getLoggedKeyspace())).all()) {
@@ -169,7 +165,7 @@ public class ResourceService {
 		
 		Search s = new Search();
 		
-		String fil = s.filter(s.all()).build();
+		String fil = s.filter(Builder.all()).build();
 		if(filter != null) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
@@ -183,28 +179,23 @@ public class ResourceService {
 						
 						if(String.valueOf(op).equalsIgnoreCase("=")) {
 							for(Object key : keyVal.keySet().toArray()) {
-								conds.add(s.match(String.valueOf(key), keyVal.get(key)));
+								conds.add(Builder.match(String.valueOf(key), keyVal.get(key)));
 							}
 						}
 					}
 					
-					fil = s.filter(s.bool().must(conds.toArray(new Condition[conds.size()]))).build();
+					fil = s.filter(Builder.bool().must(conds.toArray(new Condition[conds.size()]))).build();
 				}
 			} catch (IOException e) {
 				LOG.error(e.getMessage());
 			}
 		}
 		
-		String cql = String.format(
-			"SELECT * FROM resource WHERE lucene = '{ filter : { " + 
-				"type  : \"match\", " + 
-				"field : \"%s\", " + 
-				"value : \"%s\" " + 
-			"} }'", 
-			"id", resFileId
-		);	
-		
-		Resource res = cqlOps.selectOne(cql, Resource.class);		
+		String filt = new Search().filter(Condition.match("id", resFileId)).build();
+		Resource res = cqlOps.selectOne(
+			String.format("SELECT * FROM resource WHERE lucene='%s'", filt), 
+			Resource.class
+		);		
 		if(res == null) return Response.status(Status.NOT_FOUND)
 				.entity(String.format("Resource %s not found", resFileId))
 				.build();
