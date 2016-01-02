@@ -24,6 +24,7 @@
 		<plugin>
 			<groupId>org.codehaus.mojo</groupId>
 			<artifactId>exec-maven-plugin</artifactId>
+			<version>1.4.0</version>
 			<configuration>
 				<mainClass>id.go.bps.microdata.MicrodataApplication</mainClass>
 			</configuration>
@@ -218,12 +219,6 @@
   		<groupId>com.stratio.cassandra</groupId>
   		<artifactId>cassandra-lucene-index-builder</artifactId>
   		<version>2.1.11.1</version>
-  		<!-- <exclusions>
-  			<exclusion>
-  				<artifactId>cassandra-all</artifactId>
-  				<groupId>org.apache.cassandra</groupId>
-  			</exclusion>
-  		</exclusions> -->
   	</dependency>
   </dependencies>
 </project>

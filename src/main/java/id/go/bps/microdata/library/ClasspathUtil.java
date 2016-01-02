@@ -7,7 +7,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class ClasspathUtil {
+	private Logger LOG = LoggerFactory.getLogger(ClasspathUtil.class);
+	
 	private URLClassLoader sysloader;
 	private Method addUrl;
 
@@ -66,6 +71,6 @@ public class ClasspathUtil {
 	
 	private void addToClasspath(File cp) throws IllegalAccessException, IllegalArgumentException, InvocationTargetException, MalformedURLException {
 		addUrl.invoke(sysloader, new Object[]{cp.toURI().toURL()});
-		System.out.println("Classpath added : " + cp.toString());
+		LOG.info("Classpath added : " + cp.toString());
 	}
 }
