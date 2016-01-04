@@ -220,5 +220,10 @@
   		<artifactId>cassandra-lucene-index-builder</artifactId>
   		<version>2.1.11.1</version>
   	</dependency>
+  	<dependency>
+		<groupId>commons-daemon</groupId>
+		<artifactId>commons-daemon</artifactId>
+		<version>1.0.15</version>
+	</dependency>
   </dependencies>
 </project>
